@@ -74,7 +74,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#2c180d;color:#fff}
 .interval{font:700 16px var(--lab);color:#fff;min-width:62px;text-align:center}
 .zoom-label{font:600 15px var(--lab);color:#cdb79c;min-width:44px;text-align:center}
 .slide.on{opacity:1}
-body.fs{cursor:none}.fs .footer{display:none}.fs .slide{padding-bottom:20px}
+.footer{transition:transform .35s ease}
+body.fs{cursor:none}body.fs.bar{cursor:default}
+.fs .footer{transform:translateY(100%);pointer-events:none}.fs.bar .footer{transform:none;pointer-events:auto}.fs .slide{padding-bottom:20px}
 </style></head><body><div id="stage"><div class="track" id="track">
 
 <section class="slide on">
@@ -114,7 +116,7 @@ body.fs{cursor:none}.fs .footer{display:none}.fs .slide{padding-bottom:20px}
 </section>
 
 </div>
-<footer class="footer"><div class="footer-left"><span class="dot active" id="d0"></span><span class="dot" id="d1"></span><label class="toggle"><input type="checkbox" id="mcToggle" onchange="toggleMC()"> MAKING CHARGES</label><button class="btn" onclick="stepInterval(-1)">‹</button><span class="interval" id="intervalLabel">LIVE</span><button class="btn" onclick="stepInterval(1)">›</button></div><div class="footer-right"><button class="btn" onclick="toggleFS()">⛶ FULLSCREEN</button><button class="btn" onclick="zoom(-.05)">−</button><span class="zoom-label" id="zoomLabel">100%</span><button class="btn" onclick="zoom(.05)">+</button><button class="btn" onclick="load()">↻ REFRESH</button></div></footer></div>
+<footer class="footer"><div class="footer-left"><span class="dot active" id="d0"></span><span class="dot" id="d1"></span><label class="toggle"><input type="checkbox" id="mcToggle" onchange="toggleMC()"> MAKING CHARGES</label><button class="btn" onclick="stepInterval(-1)">‹</button><span class="interval" id="intervalLabel">15 MIN</span><button class="btn" onclick="stepInterval(1)">›</button></div><div class="footer-right"><button class="btn" onclick="toggleFS()">⛶ FULLSCREEN</button><button class="btn" onclick="zoom(-.05)">−</button><span class="zoom-label" id="zoomLabel">100%</span><button class="btn" onclick="zoom(.05)">+</button><button class="btn" onclick="load()">↻ REFRESH</button></div></footer></div>
 <script>
 function toAr(n){const d=['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];return String(n).replace(/[0-9]/g,x=>d[+x]);}
 
@@ -131,15 +133,31 @@ function toggleFS(){if(!document.fullscreenElement){document.documentElement.req
 function toggleMC(){['bodyEN','bodyAR'].forEach(id=>document.getElementById(id).classList.toggle('hide-mc',!document.getElementById('mcToggle').checked));}
 function goSlide(n){cur=n;document.getElementById('track').style.transform='translate3d('+(-1920*n)+'px,0,0)';document.querySelectorAll('.slide').forEach((el,i)=>el.classList.toggle('on',i===n));document.getElementById('d0').classList.toggle('active',n===0);document.getElementById('d1').classList.toggle('active',n===1);if(modes[modeIndex].id==='live')load()}
 setInterval(()=>goSlide(cur===0?1:0),25000);
-const modes=[{id:'live',text:'LIVE'},{id:'15',text:'15 MIN',val:15},{id:'30',text:'30 MIN',val:30},{id:'60',text:'1 HR',val:60}];let modeIndex=0,fetchTimer=null;
-function stepInterval(d){modeIndex=(modeIndex+d+modes.length)%modes.length;document.getElementById('intervalLabel').textContent=modes[modeIndex].text;if(fetchTimer)clearInterval(fetchTimer);fetchTimer=null;if(modes[modeIndex].id==='live')load();else{fetchTimer=setInterval(load,modes[modeIndex].val*60000);load()}}
+const modes=[{id:'live',text:'LIVE'},{id:'15',text:'15 MIN',val:15},{id:'30',text:'30 MIN',val:30},{id:'60',text:'1 HR',val:60},{id:'off',text:'OFF'}];let modeIndex=1,fetchTimer=null,retryTimer=null,lastStamp=null; /* default: 15 MIN */
+function stepInterval(d){modeIndex=(modeIndex+d+modes.length)%modes.length;document.getElementById('intervalLabel').textContent=modes[modeIndex].text;if(fetchTimer)clearInterval(fetchTimer);fetchTimer=null;clearTimeout(retryTimer);const m=modes[modeIndex];if(m.id==='off')return;if(m.id==='live')load();else{fetchTimer=setInterval(load,m.val*60000);load()}}
 function render(p){/* Original pricing formulas retained */const p24k=(p*1.4485+15)/116.64,p21k=p24k*0.879,p18k=p24k*0.75,tola21=p24k*0.879*11.664,tenTola=(p*1.4485)+15,f=x=>x.toFixed(3),oz=Math.floor(p).toLocaleString('en-US');
 const set=(id,v)=>document.getElementById(id).textContent=v;
 set('ozEN',oz);set('tolaEN',f(tola21));set('tenTolaEN',f(tenTola));set('enK24',f(p24k));set('enK21',f(p21k));set('enK18',f(p18k));
 set('ozAR',toAr(oz));set('tolaAR',toAr(f(tola21)));set('tenTolaAR',toAr(f(tenTola)));set('arK24',toAr(f(p24k)));set('arK21',toAr(f(p21k)));set('arK18',toAr(f(p18k)));
 const n=new Date(),stamp=n.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' · '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-set('updEN','LAST UPDATED: '+stamp);set('updAR','آخر تحديث: '+toAr(stamp));}
-async function load(){try{const r=await fetch('https://api.gold-api.com/price/XAU');if(!r.ok)throw new Error('Price service unavailable');const data=await r.json();if(typeof data.price!=='number')throw new Error('Invalid gold price data');render(data.price)}catch(e){document.getElementById('updEN').textContent='PRICE UPDATE ERROR · CHECK INTERNET';console.error(e)}}
+lastStamp=stamp;set('updEN','LAST UPDATED: '+stamp);set('updAR','آخر تحديث: '+toAr(stamp));}
+async function load(){
+  clearTimeout(retryTimer);
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),10000);
+  try{
+    const r=await fetch('https://api.gold-api.com/price/XAU',{signal:ctl.signal,cache:'no-store'});
+    if(!r.ok)throw new Error('Price service unavailable');
+    const data=await r.json();
+    if(typeof data.price!=='number')throw new Error('Invalid gold price data');
+    render(data.price);
+  }catch(e){
+    /* Offline or API error: the last price stays on screen, only the status line changes */
+    console.error(e);
+    document.getElementById('updEN').textContent=lastStamp?'LAST UPDATED: '+lastStamp+' · OFFLINE':'WAITING FOR INTERNET…';
+    document.getElementById('updAR').textContent=lastStamp?'آخر تحديث: '+toAr(lastStamp)+' · لا يوجد اتصال':'بانتظار الاتصال بالإنترنت…';
+    if(modes[modeIndex].id!=='off')retryTimer=setTimeout(load,60000);
+  }finally{clearTimeout(to)}
+}
 function isFS(){return !!document.fullscreenElement||(innerWidth>=screen.width-2&&innerHeight>=screen.height-2)}
 function syncFS(){document.body.classList.toggle('fs',isFS());applyZoom()}
 document.addEventListener('fullscreenchange',syncFS);addEventListener('resize',syncFS);
@@ -148,5 +166,10 @@ function armAutoFS(){/* browsers allow fullscreen only after a first tap/key/cli
 const go=e=>{if(e.target.closest&&e.target.closest('.footer'))return;if(!isFS())enterFS();['click','keydown','touchstart'].forEach(t=>removeEventListener(t,go,true))};
 ['click','keydown','touchstart'].forEach(t=>addEventListener(t,go,true));
 const r=document.documentElement.requestFullscreen?.();if(r&&r.then)r.then(()=>['click','keydown','touchstart'].forEach(t=>removeEventListener(t,go,true))).catch(()=>{})}
-window.onload=()=>{applyZoom();toggleMC();load();syncFS();armAutoFS()};
+/* Bring the bottom control bar back while in full screen: press any remote key / OK, click or tap the screen, or move the mouse to the bottom edge. It hides again after 6 seconds. */
+let barTimer;
+function showBar(){document.body.classList.add('bar');clearTimeout(barTimer);barTimer=setTimeout(()=>document.body.classList.remove('bar'),6000)}
+addEventListener('keydown',showBar);addEventListener('click',showBar);addEventListener('touchstart',showBar,{passive:true});
+addEventListener('mousemove',e=>{if(e.clientY>innerHeight-110)showBar()});
+window.onload=()=>{applyZoom();toggleMC();stepInterval(0);syncFS();armAutoFS()};
 </script></body></html>

@@ -135,7 +135,7 @@ function goSlide(n){cur=n;document.getElementById('track').style.transform='tran
 setInterval(()=>goSlide(cur===0?1:0),25000);
 const modes=[{id:'live',text:'LIVE'},{id:'15',text:'15 MIN',val:15},{id:'30',text:'30 MIN',val:30},{id:'60',text:'1 HR',val:60},{id:'off',text:'OFF'}];let modeIndex=1,fetchTimer=null,retryTimer=null,lastStamp=null; /* default: 15 MIN */
 function stepInterval(d){modeIndex=(modeIndex+d+modes.length)%modes.length;document.getElementById('intervalLabel').textContent=modes[modeIndex].text;if(fetchTimer)clearInterval(fetchTimer);fetchTimer=null;clearTimeout(retryTimer);const m=modes[modeIndex];if(m.id==='off')return;if(m.id==='live')load();else{fetchTimer=setInterval(load,m.val*60000);load()}}
-function render(p){/* Original pricing formulas retained */const p24k=(p*1.4485+15)/116.64,p21k=p24k*0.879,p18k=p24k*0.75,tola21=p24k*0.879*11.664,tenTola=(p*1.4485)+15,f=x=>x.toFixed(3),oz=Math.floor(p).toLocaleString('en-US');
+function render(p){/* Original pricing formulas retained */const p24k=(p*1.4485+25)/116.64,p21k=p24k*0.879,p18k=p24k*0.754,tola21=p24k*0.879*11.664,tenTola=(p*1.4485)+15,f=x=>x.toFixed(3),oz=Math.floor(p).toLocaleString('en-US');
 const set=(id,v)=>document.getElementById(id).textContent=v;
 set('ozEN',oz);set('tolaEN',f(tola21));set('tenTolaEN',f(tenTola));set('enK24',f(p24k));set('enK21',f(p21k));set('enK18',f(p18k));
 set('ozAR',toAr(oz));set('tolaAR',toAr(f(tola21)));set('tenTolaAR',toAr(f(tenTola)));set('arK24',toAr(f(p24k)));set('arK21',toAr(f(p21k)));set('arK18',toAr(f(p18k)));

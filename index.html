@@ -10,13 +10,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:#2c180d;color:#fff}
 :root{--gold:#f3dcb8;--gold2:#b27a46;--dk:#3b2315;--brown:#6b3f22;--line:rgba(150,98,56,.6);--en:'Barlow Semi Condensed','Arial Narrow',sans-serif;--lab:'Barlow Condensed','Arial Narrow',sans-serif;--ar:'Cairo','Tahoma',sans-serif}
 #stage{position:fixed;width:1920px;height:1080px;left:0;top:0;transform-origin:top left;overflow:hidden;background:linear-gradient(180deg,#68422a 0,#4a2c1a 55%,#33190d 100%)}
 .track{width:3840px;height:1080px;display:flex;transition:transform 1.6s cubic-bezier(.65,0,.35,1);will-change:transform}
-.slide{transition:opacity 1.6s ease;opacity:.2;width:1920px;height:1080px;flex:0 0 1920px;display:flex;flex-direction:column;padding-bottom:66px;overflow:hidden}
+.slide{transition:opacity 1.6s ease;opacity:.2;width:1920px;height:1080px;flex:0 0 1920px;display:flex;flex-direction:column;padding-bottom:20px;overflow:hidden}
 
 /* Header */
 .header{flex:none;height:140px;padding:0 64px;display:grid;grid-template-columns:1fr 130px 1fr;gap:28px;align-items:center;background:linear-gradient(110deg,#fffaf2,#f1e2cd 50%,#fffaf2);border-bottom:4px solid var(--gold2)}
 .brand-en{font:800 58px/1 var(--lab);letter-spacing:3px;color:var(--brown);text-transform:uppercase}
-.brand-ar{font:800 50px/1.3 var(--ar);color:var(--brown);text-align:right}
+.hdr-right{display:flex;align-items:center;justify-content:space-between;gap:24px;min-width:0}
+.brand-ar{font:800 46px/1.3 var(--ar);color:var(--brown);text-align:right;flex:none}
 .logo-space{width:124px;height:124px}.logo-space img{width:100%;height:100%;object-fit:contain;display:block}
+
+.clock{flex:1;text-align:center;color:var(--brown)}
+.clock-time{font:800 60px/1 var(--en);font-variant-numeric:tabular-nums;letter-spacing:1px;white-space:nowrap}
+.clock-time small{font:800 30px/1 var(--lab);letter-spacing:2px;margin-inline-start:10px}
+.clock-date{font:700 23px/1.2 var(--lab);letter-spacing:1.5px;color:#7d6350;margin-top:8px;white-space:nowrap}
+.clock-date.ar{font:700 26px/1.4 var(--ar);letter-spacing:0}
+.clock-time.ar{font-family:var(--ar)}
 
 /* Content */
 .content{flex:1;min-height:0;display:flex;flex-direction:column;gap:22px;padding:24px 58px 0}
@@ -76,11 +84,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#2c180d;color:#fff}
 .slide.on{opacity:1}
 .footer{transition:transform .35s ease}
 body.fs{cursor:none}body.fs.bar{cursor:default}
-.fs .footer{transform:translateY(100%);pointer-events:none}.fs.bar .footer{transform:none;pointer-events:auto}.fs .slide{padding-bottom:20px}
+.footer{transform:translateY(100%);pointer-events:none}body.bar .footer{transform:none;pointer-events:auto}
 </style></head><body><div id="stage"><div class="track" id="track">
 
 <section class="slide on">
-<header class="header"><div class="brand-en">Muttrah Modern<br>Jewellery</div><div class="logo-space"><img src="https://i.ibb.co/vCKMggpc/1792244634401.png" alt="Logo"></div><div class="brand-ar" lang="ar" dir="rtl">مجوهرات مطرح الحديثة</div></header>
+<header class="header"><div class="brand-en">Muttrah Modern<br>Jewellery</div><div class="logo-space"><img src="https://i.ibb.co/vCKMggpc/1792244634401.png" alt="Logo"></div><div class="hdr-right"><div class="clock"><div class="clock-time en">--:--</div><div class="clock-date en">—</div></div><div class="brand-ar" lang="ar" dir="rtl">مجوهرات مطرح الحديثة</div></div></header>
 <main class="content" id="bodyEN">
 <div class="karat-row">
 <article class="karat l"><div class="karat-name">24K</div><div class="karat-price" id="enK24">—</div><div class="karat-unit">OMR / GRAM</div></article>
@@ -98,7 +106,7 @@ body.fs{cursor:none}body.fs.bar{cursor:default}
 </section>
 
 <section class="slide">
-<header class="header"><div class="brand-en">Muttrah Modern<br>Jewellery</div><div class="logo-space"><img src="https://i.ibb.co/vCKMggpc/1792244634401.png" alt="Logo"></div><div class="brand-ar" lang="ar" dir="rtl">مجوهرات مطرح الحديثة</div></header>
+<header class="header"><div class="brand-en">Muttrah Modern<br>Jewellery</div><div class="logo-space"><img src="https://i.ibb.co/vCKMggpc/1792244634401.png" alt="Logo"></div><div class="hdr-right"><div class="clock"><div class="clock-time en">--:--</div><div class="clock-date en">—</div></div><div class="brand-ar" lang="ar" dir="rtl">مجوهرات مطرح الحديثة</div></div></header>
 <main class="content" id="bodyAR">
 <div class="karat-row">
 <article class="karat l"><div class="karat-name-ar">عيار ١٨</div><div class="karat-price-ar" id="arK18">—</div><div class="karat-unit">ر.ع / جرام</div></article>
@@ -171,5 +179,12 @@ let barTimer;
 function showBar(){document.body.classList.add('bar');clearTimeout(barTimer);barTimer=setTimeout(()=>document.body.classList.remove('bar'),6000)}
 addEventListener('keydown',showBar);addEventListener('click',showBar);addEventListener('touchstart',showBar,{passive:true});
 addEventListener('mousemove',e=>{if(e.clientY>innerHeight-110)showBar()});
-window.onload=()=>{applyZoom();toggleMC();stepInterval(0);syncFS();armAutoFS()};
+/* Live clock in header (uses the device's own date/time) */
+const DEN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],MEN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAR=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],MAR=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function tick(){const n=new Date(),p=v=>String(v).padStart(2,'0'),h=n.getHours(),h12=h%12||12,t=p(h12)+':'+p(n.getMinutes());
+document.querySelectorAll('.clock-time.en').forEach(e=>e.innerHTML=t+'<small>'+(h<12?'AM':'PM')+'</small>');
+document.querySelectorAll('.clock-date.en').forEach(e=>e.textContent=DEN[n.getDay()].toUpperCase()+' · '+n.getDate()+' '+MEN[n.getMonth()].toUpperCase()+' '+n.getFullYear());}
+setInterval(tick,1000);
+window.onload=()=>{tick();showBar();applyZoom();toggleMC();stepInterval(0);syncFS();armAutoFS()};
 </script></body></html>
